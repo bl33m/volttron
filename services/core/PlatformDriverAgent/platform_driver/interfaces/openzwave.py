@@ -61,13 +61,13 @@ global network
 
 
 class ZRegister(BaseRegister):
-    def __init__(self, point_name, node_ID, COMMAND_CLASS, value, read_only, units, register_type=None, description=' '):
+    def __init__(self, point_name, node_ID, COMMAND_CLASS, value_ID, read_only, units, register_type=None, description=' '):
         self.register_type = register_type
         self.units = units
         self.read_only = read_only
         self.Node_ID = node_ID
         self.point_name = point_name
-        self.value = value
+        self.value_ID = value_ID
         self.command_class = COMMAND_CLASS
         self.description = description
 
@@ -94,7 +94,11 @@ class Interface(BasicRevert, BaseInterface):
     def get_point(self, point_name):
         register = self.get_register_by_name(point_name)
 
-        return network.nodes[register.Node_ID].values[register.value].data
+        for val in network.nodes[register.Node_ID].values:
+            if register.value_id == network.nodes[register.Node_ID].values[val].value_id:
+                result = network.nodes[register.Node_ID].values[val].data
+
+        return result
 
     def set_point(self, point_name, value):
         register = self.get_register_by_name(point_name)
@@ -102,26 +106,26 @@ class Interface(BasicRevert, BaseInterface):
             raise RuntimeError(
                 "Trying to write to a point configured read only: " + point_name)
         if register.command_class == 'COMMAND_CLASS_SWITCH_MULTILEVEL':
-            network.nodes[register.Node_ID].set_dimmer(network.nodes[register.Node_ID].values[register.value].object_id,
+            network.nodes[register.Node_ID].set_dimmer(network.nodes[register.Node_ID].values[register.value].value_id,
                                                        value)
         elif register.command_class == 'COMMAND_CLASS_SWITCH_BINARY':
-            network.nodes[register.Node_ID].set_switch(network.nodes[register.Node_ID].values[register.value].object_id,
+            network.nodes[register.Node_ID].set_switch(network.nodes[register.Node_ID].values[register.value].value_id,
                                                        value)
         elif register.command_class == 'COMMAND_CLASS_SWITCH_ALL':
             network.nodes[register.Node_ID].set_switch_all(
-                network.nodes[register.Node_ID].values[register.value].object_id, value)
+                network.nodes[register.Node_ID].values[register.value].value_id, value)
         elif register.command_class == 'COMMAND_CLASS_COLOR':
-            network.nodes[register.Node_ID].set_rgbw(network.nodes[register.Node_ID].values[register.value].object_id,
+            network.nodes[register.Node_ID].set_rgbw(network.nodes[register.Node_ID].values[register.value].value_id,
                                                      value)
         elif register.command_class == 'COMMAND_CLASS_DOOR_LOCK':
             network.nodes[register.Node_ID].set_doorlock(
-                network.nodes[register.Node_ID].values[register.value].object_id, value)
+                network.nodes[register.Node_ID].values[register.value].value_id, value)
         elif register.command_class == 'COMMAND_CLASS_USER_CODE':
             network.nodes[register.Node_ID].set_usercode(
-                network.nodes[register.Node_ID].values[register.value].object_id, value)
+                network.nodes[register.Node_ID].values[register.value].value_id, value)
         elif register.command_class == 'COMMAND_CLASS_CONFIGURATION':
-            network.nodes[register.Node_ID].set_config(network.nodes[register.Node_ID].values[register.value].object_id,
-                                                 value)
+            network.nodes[register.Node_ID].set_config(network.nodes[register.Node_ID].values[register.value].value_id,
+                                                       value)
         else:
             raise RuntimeError("Change not support by point: " + point_name)
 
