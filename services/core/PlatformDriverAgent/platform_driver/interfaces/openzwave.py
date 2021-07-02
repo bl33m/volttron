@@ -83,7 +83,7 @@ class Interface(BasicRevert, BaseInterface):
     def configure(self, config_dict, registry_config_str):
         self.parse_config(registry_config_str)
         device = config_dict.get("Z_stick_device_path")
-        options = ZWaveOption(device, config_path="/usr/etc/openzwave/", user_path=".", cmd_line="")
+        options = ZWaveOption(device, config_path="/env/lib/python3.8/site-packages/openzwave/", user_path=".", cmd_line="")
         options.set_append_log_file(False)
         options.set_console_output(False)
         options.set_save_log_level(None)
@@ -137,8 +137,10 @@ class Interface(BasicRevert, BaseInterface):
 
         read_registers = self.get_registers_by_type("byte", True)
         write_registers = self.get_registers_by_type("byte", False)
+        index = 0
         for register in read_registers + write_registers:
-            result[register.point_name] = network.nodes[register.Node_ID].values[register.value].data
+            result[register.point_name] = network.nodes[register.Node_ID].values[index].data
+            index += 1
 
         return result
 
