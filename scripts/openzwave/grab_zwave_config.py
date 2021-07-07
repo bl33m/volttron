@@ -40,6 +40,7 @@
 import datetime
 import logging
 from os.path import join
+from typing import io
 import sys
 import os
 import argparse
@@ -81,7 +82,6 @@ network = ZWaveNetwork(options, autostart=True)
 
 
 def main():
-    log = "None"
 
     for node in network.nodes:
         config = {
@@ -89,7 +89,8 @@ def main():
             "driver_type": "openzwave",
             "registry_config": "config://registry_configs/{}".format(str(network.nodes[node].product_name) + ".csv")
         }
-        jsonapi.dump(config, args.driver_out_file, indent=4)
+        with open(join(args.out_directory, str(network.nodes[node].product)) + ".JSON", 'w') as driver_out:
+            jsonapi.dump(config, driver_out, indent=4)
         config_writer = DictWriter(join(args.out_directory, str(network.nodes[node].product_name)) + ".csv",
                                    ('Node ID',
                                     'Volttron Point Name',
