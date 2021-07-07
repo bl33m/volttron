@@ -108,26 +108,20 @@ class Interface(BasicRevert, BaseInterface):
             raise RuntimeError(
                 "Trying to write to a point configured read only: " + point_name)
         if register.command_class == 'COMMAND_CLASS_SWITCH_MULTILEVEL':
-            network.nodes[register.Node_ID].set_dimmer(network.nodes[register.Node_ID].values[register.value].value_id,
-                                                       value)
+            network.nodes[register.Node_ID].set_dimmer(register.value_id, value)
         elif register.command_class == 'COMMAND_CLASS_SWITCH_BINARY':
-            network.nodes[register.Node_ID].set_switch(network.nodes[register.Node_ID].values[register.value].value_id,
-                                                       value)
+            network.nodes[register.Node_ID].set_switch(register.value_id, value)
         elif register.command_class == 'COMMAND_CLASS_SWITCH_ALL':
-            network.nodes[register.Node_ID].set_switch_all(
-                network.nodes[register.Node_ID].values[register.value].value_id, value)
+            network.nodes[register.Node_ID].set_switch_all(register.value_id, value)
         elif register.command_class == 'COMMAND_CLASS_COLOR':
-            network.nodes[register.Node_ID].set_rgbw(network.nodes[register.Node_ID].values[register.value].value_id,
+            network.nodes[register.Node_ID].set_rgbw(register.value_id,
                                                      value)
         elif register.command_class == 'COMMAND_CLASS_DOOR_LOCK':
-            network.nodes[register.Node_ID].set_doorlock(
-                network.nodes[register.Node_ID].values[register.value].value_id, value)
+            network.nodes[register.Node_ID].set_doorlock(register.value_id, value)
         elif register.command_class == 'COMMAND_CLASS_USER_CODE':
-            network.nodes[register.Node_ID].set_usercode(
-                network.nodes[register.Node_ID].values[register.value].value_id, value)
+            network.nodes[register.Node_ID].set_usercode(register.value_id, value)
         elif register.command_class == 'COMMAND_CLASS_CONFIGURATION':
-            network.nodes[register.Node_ID].set_config(network.nodes[register.Node_ID].values[register.value].value_id,
-                                                       value)
+            network.nodes[register.Node_ID].set_config(register.value_id, value)
         else:
             raise RuntimeError("Change not support by point: " + point_name)
 
