@@ -44,9 +44,12 @@ import os
 import argparse
 import pathlib
 import time
+import asyncio
+import zigpy.endpoint
+from zigpy import types as t
 
-from digi.xbee.models.status import NetworkDiscoveryStatus
-from digi.xbee.devices import XBeeDevice
+from bellows.ezsp import EZSP
+from bellows.zigbee.application import ControllerApplication
 
 from csv import DictWriter
 
@@ -69,10 +72,10 @@ from volttron.platform import jsonapi
 # use_ieee = False,
 # )
 
-arg_parser = argparse.ArgumentParser(description='Enter a Zigbee_stick_device_path, an out directory for the config '
+arg_parser = argparse.ArgumentParser(description='Enter a Zigbee_device_path, an out directory for the config '
                                                  'files, and the manufacture of your XBee hub/stick')
 
-arg_parser.add_argument("Zigbee_stick_device_path", type=pathlib.Path,
+arg_parser.add_argument("Zigbee_device_path", type=pathlib.Path,
                         help="Device path of Z-Stick/hub, /dev/tty...")
 
 arg_parser.add_argument("radio_manufacture", type=pathlib.Path,
@@ -85,30 +88,36 @@ arg_parser.add_argument("--out-directory", type=pathlib.Path,
 
 args = arg_parser.parse_args()
 
-# supported radios
-# ezsp
-# deconz
-# znp
-# ti_cc
-# zigate
-# xbee
-
 
 config = {
-    "driver_config": {"Zigbee_stick_device_path": args.Z_stick_device_path,
-                      "Radio manufacture": args.radio_manufacture},
+    "driver_config": {"Zigbee_device_path": args.Z_device_path,
+                      "IO_LINEIN": args.radio_manufacture},
+                      "IO_Line out": args.io_line
     "driver_type": "openzwave",
     "registry_config": "config://registry_configs/{}".format(str(network.nodes[node].product_name) + ".csv")
 }
 
+class ZigbeeController():
+    def __init__(self):
+        self.ezsp = EZSP
+        self.app = ControllerApplication(self.ezsp, os.getenv("DATABASE_FILE"), "devices.db")
+
+    async def setup_network(self):
+        await self.ezsp.connect(os.getenv('DATABASE_FILE', args.Zigbee_device_path), 57600)
+        await self.app.startup(auto_form=True)
+
+    async def permit_join(self):
+        await self.app.permit()
+        await asyncio.sleep(60)
+
 
 def main():
+
     config_writer = DictWriter("no idea what to call this yet" + ".csv",
                                ('ieee',
+                                '64Bit Address'
                                 'Volttron Point Name',
                                 'Units',
-                                'COMMAND_CLASS',
-                                'Value_ID',
                                 'Max',
                                 'Min',
                                 'Readable',
@@ -134,6 +143,22 @@ def main():
     network.start_discovery_proccess(deep=True, n_deep_scans=1)
 
     nodes = network.get_devices()
+
+    for ieee, dev in self.app.devices.items():
+        for epid, ep in self.app.devices.items():
+            for cluster_id, cluster in list(ep.in_clusters + ep.out_clusters):
+                results = {
+                    ieee,
+                    dev.nwk,
+                    epid,
+                    ep.profile_id,
+                    ep.device_type,
+                    cluster.name,
+                    cluster_id,
+                }
+                config_writer.writerow(results)
+
+
 
 try:
     main()
