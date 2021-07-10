@@ -115,46 +115,27 @@ def main():
 
     config_writer = DictWriter("no idea what to call this yet" + ".csv",
                                ('ieee',
-                                '64Bit Address'
-                                'Volttron Point Name',
-                                'Units',
-                                'Max',
-                                'Min',
-                                'Readable',
-                                'Writable',
+                                'network id'
+                                'endpoint id',
+                                'endpoint profile id',
+                                'endpoint device type',
+                                'cluster name',
+                                'cluster id',
                                 'Notes'))
     config_writer.writeheader()
-    device = XBeeDevice(args.Zigbee_stick_device_path, 9600)
 
-    network = device.get_network()
-    network.set_discovery_timeout(15)
-
-    def device_callback(remote):
-        results = {remote}
-        config_writer.writerow(results)
-
-    network.add_device_discovery_callback(device_callback)
-
-    network.set_deep_discovery_options(deep_mode=NeighborDiscoveryMode.CASCADE,
-                                    del_not_discovered_nodes_in_last_scan=False)
-
-    network.set_deep_discovery_timeout(node_timeout=30, time_bw_requests=10,
-                                    time_bw_scans=20)
-    network.start_discovery_proccess(deep=True, n_deep_scans=1)
-
-    nodes = network.get_devices()
 
     for ieee, dev in self.app.devices.items():
         for epid, ep in self.app.devices.items():
             for cluster_id, cluster in list(ep.in_clusters + ep.out_clusters):
                 results = {
-                    ieee,
-                    dev.nwk,
-                    epid,
-                    ep.profile_id,
-                    ep.device_type,
-                    cluster.name,
-                    cluster_id,
+                    'ieee': ieee,
+                    'network id': dev.nwk,
+                    'endpoint id': epid,
+                    'endpoint profile id': ep.profile_id,
+                    'endpoint device type': ep.device_type,
+                    'cluster name': cluster.name,
+                    'cluster id': cluster_id,
                 }
                 config_writer.writerow(results)
 

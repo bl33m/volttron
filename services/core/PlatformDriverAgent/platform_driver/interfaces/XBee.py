@@ -37,7 +37,6 @@
 # }}}
 
 
-import zigpy
 
 from volttron.platform import jsonapi
 from volttron.platform.agent import utils
@@ -117,29 +116,6 @@ class Interface(BasicRevert, BaseInterface):
                 manufacturer=manufacturer,
             )
 
-        register = self.get_register_by_name(point_name)
-        if register.read_only:
-            raise RuntimeError(
-                "Trying to write to a point configured read only: " + point_name)
-        if register.command_class == 'COMMAND_CLASS_SWITCH_MULTILEVEL':
-            network.nodes[register.Node_ID].set_dimmer(register.value_id, value)
-        elif register.command_class == 'COMMAND_CLASS_SWITCH_BINARY':
-            network.nodes[register.Node_ID].set_switch(register.value_id, value)
-        elif register.command_class == 'COMMAND_CLASS_SWITCH_ALL':
-            network.nodes[register.Node_ID].set_switch_all(register.value_id, value)
-        elif register.command_class == 'COMMAND_CLASS_COLOR':
-            network.nodes[register.Node_ID].set_rgbw(register.value_id,
-                                                     value)
-        elif register.command_class == 'COMMAND_CLASS_DOOR_LOCK':
-            network.nodes[register.Node_ID].set_doorlock(register.value_id, value)
-        elif register.command_class == 'COMMAND_CLASS_USER_CODE':
-            network.nodes[register.Node_ID].set_usercode(register.value_id, value)
-        elif register.command_class == 'COMMAND_CLASS_CONFIGURATION':
-            network.nodes[register.Node_ID].set_config(register.value_id, value)
-        else:
-            raise RuntimeError("Change not support by point: " + point_name)
-
-        register.value = ZRegister.reg_type(value)
         return ZRegister.value
 
     def scrape_all(self):
@@ -147,10 +123,8 @@ class Interface(BasicRevert, BaseInterface):
 
         read_registers = self.get_registers_by_type("byte", True)
         write_registers = self.get_registers_by_type("byte", False)
-        index = 0
         for register in read_registers + write_registers:
-            result[register.point_name] = network.nodes[register.Node_ID].values[index].data
-            index += 1
+            result[register.point_name] = "some getter method from HA"
 
         return result
 
