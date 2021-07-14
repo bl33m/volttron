@@ -2,3 +2,5 @@ bacpypes
 pymodbus
 modbus-tk
 pyserial
+zigpy
+bellows

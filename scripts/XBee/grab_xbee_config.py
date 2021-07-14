@@ -45,6 +45,11 @@ import argparse
 import pathlib
 import time
 import asyncio
+
+import zigpy_deconz.zigbee.application
+import zigpy_xbee.zigbee.application
+import zigpy_zigate.zigbee.application
+import bellows.ezsp
 import zigpy.endpoint
 from zigpy import types as t
 
@@ -78,7 +83,7 @@ arg_parser = argparse.ArgumentParser(description='Enter a Zigbee_device_path, an
 arg_parser.add_argument("Zigbee_device_path", type=pathlib.Path,
                         help="Device path of Z-Stick/hub, /dev/tty...")
 
-arg_parser.add_argument("radio_manufacture", type=pathlib.Path,
+arg_parser.add_argument("radio_manufacture", type=str,
                         help="Manufacture of Zigbee radio module",
                         default=sys.stdout)
 
@@ -97,21 +102,21 @@ config = {
     "registry_config": "config://registry_configs/{}".format(str(network.nodes[node].product_name) + ".csv")
 }
 
-class ZigbeeController():
-    def __init__(self):
-        self.ezsp = EZSP
-        self.app = ControllerApplication(self.ezsp, os.getenv("DATABASE_FILE"), "devices.db")
-
-    async def setup_network(self):
-        await self.ezsp.connect(os.getenv('DATABASE_FILE', args.Zigbee_device_path), 57600)
-        await self.app.startup(auto_form=True)
-
-    async def permit_join(self):
-        await self.app.permit()
-        await asyncio.sleep(60)
 
 
 def main():
+    radio
+    if args.radio_manufacure == "ezsp":
+        radio = bellows.zigbee.application.ControllerApplication
+    elif args.radio_manufacure == "deconz":
+        radio = zigpy_deconz.zigbee.application.ControllerApplication
+    elif args.radio_manufacure == "zigate":
+        radio = zigpy_zigate.zigbee.application.ControllerApplication
+
+    await radio.connect(args.Zigbee_device_path, 57600)
+
+    controller = ControllerApplication(radio)
+    await controller.startup(auto_form=True)
 
     config_writer = DictWriter("no idea what to call this yet" + ".csv",
                                ('ieee',
@@ -119,23 +124,24 @@ def main():
                                 'endpoint id',
                                 'endpoint profile id',
                                 'endpoint device type',
-                                'cluster name',
+                                'Point Name',
                                 'cluster id',
                                 'Notes'))
     config_writer.writeheader()
 
 
-    for ieee, dev in self.app.devices.items():
-        for epid, ep in self.app.devices.items():
-            for cluster_id, cluster in list(ep.in_clusters + ep.out_clusters):
+    for ieee, dev in controller.devices.items():
+        for epid, ep in controller.devices.items():
+            for cluster_id, cluster in ep.in_clusters + ep.out_clusters:
                 results = {
                     'ieee': ieee,
                     'network id': dev.nwk,
                     'endpoint id': epid,
                     'endpoint profile id': ep.profile_id,
                     'endpoint device type': ep.device_type,
-                    'cluster name': cluster.name,
+                    'Point Name': cluster.name,
                     'cluster id': cluster_id,
+                    'Notes': "",
                 }
                 config_writer.writerow(results)
 

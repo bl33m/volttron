@@ -36,7 +36,16 @@
 # under Contract DE-AC05-76RL01830
 # }}}
 
-
+import zigpy
+import zigpy_xbee
+import zigpy_deconz
+import bellows
+import zigpy_zigate
+import voluptuous as vol
+from zigpy.config.validators import cv_boolean
+from zigpy.types.named import EUI64
+from zigpy.zcl.clusters.security import IasAce
+import zigpy.zdo.types as zdo_types
 
 from volttron.platform import jsonapi
 from volttron.platform.agent import utils
@@ -64,6 +73,7 @@ class Interface(BasicRevert, BaseInterface):
     """
     Interface implementation for use with the python-openzwave library
     """
+    zha_gateway = ""
 
     def __init__(self, **kwargs):
         super(Interface, self).__init__(**kwargs)
@@ -74,20 +84,22 @@ class Interface(BasicRevert, BaseInterface):
         device = config_dict.get("Z_stick_device_path")
         options = ZWaveOption(device, config_path="/env/lib/python3.8/site-packages/openzwave/", user_path=".",
                               cmd_line="")
-        options.set_append_log_file(False)
-        options.set_console_output(False)
-        options.set_save_log_level(None)
-        options.set_logging(True)
-        options.lock()
-        network = ZWaveNetwork(options, autostart=True)
+        radio
+        if args.radio_manufacure == "ezsp":
+            radio = bellows.zigbee.application.ControllerApplication
+        elif args.radio_manufacure == "xbee":
+            radio = zigpy_xbee.zigbee.application.ControllerApplication
+        elif args.radio_manufacure == "deconz":
+            radio = zigpy_deconz.zigbee.application.ControllerApplication
+        elif args.radio_manufacure == "zigate":
+            radio = zigpy_zigate.zigbee.application.ControllerApplication
+        await radio.connect(args.Zigbee_device_path, 57600)
+        controller = ControllerApplication(radio)
+        await controller.startup(auto_form=True)
 
     def get_point(self, point_name):
         register = self.get_register_by_name(point_name)
-
-        for val in network.nodes[register.Node_ID].values:
-            if register.value_id == network.nodes[register.Node_ID].values[val].value_id:
-                result = network.nodes[register.Node_ID].values[val].data
-
+        controller.
         return result
 
     def set_point(self, point_name, value):
@@ -102,9 +114,6 @@ class Interface(BasicRevert, BaseInterface):
         args = register.ATTR_ARGS
         manufacturer = register.ATTR_MANUFACTURER or None
         zha_device = zha_gateway.get_device(ieee)
-        if cluster_id >= MFG_CLUSTER_ID_START and manufacturer is None:
-            manufacturer = zha_device.manufacturer_code
-        response = None
         if zha_device is not None:
             response = await zha_device.issue_cluster_command(
                 endpoint_id,
@@ -115,8 +124,7 @@ class Interface(BasicRevert, BaseInterface):
                 cluster_type=cluster_type,
                 manufacturer=manufacturer,
             )
-
-        return ZRegister.value
+        return response
 
     def scrape_all(self):
         result = {}
