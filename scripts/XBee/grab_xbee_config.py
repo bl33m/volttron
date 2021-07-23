@@ -83,7 +83,7 @@ arg_parser = argparse.ArgumentParser(description='Enter a Zigbee_device_path, an
 arg_parser.add_argument("Zigbee_device_path", type=pathlib.Path,
                         help="Device path of Z-Stick/hub, /dev/tty...")
 
-arg_parser.add_argument("radio_manufacture", type=str,
+arg_parser.add_argument("radio_manufacturer", type=str,
                         help="Manufacture of Zigbee radio module",
                         default=sys.stdout)
 
@@ -106,11 +106,11 @@ config = {
 
 def main():
     radio
-    if args.radio_manufacure == "ezsp":
+    if args.radio_manufacturer == "ezsp":
         radio = bellows.zigbee.application.ControllerApplication
-    elif args.radio_manufacure == "deconz":
+    elif args.radio_manufacturer == "deconz":
         radio = zigpy_deconz.zigbee.application.ControllerApplication
-    elif args.radio_manufacure == "zigate":
+    elif args.radio_manufacturer == "zigate":
         radio = zigpy_zigate.zigbee.application.ControllerApplication
 
     await radio.connect(args.Zigbee_device_path, 57600)
@@ -118,7 +118,7 @@ def main():
     controller = ControllerApplication(radio)
     await controller.startup(auto_form=True)
 
-    config_writer = DictWriter("no idea what to call this yet" + ".csv",
+    config_writer = DictWriter(args.radio_manufacture + ".csv",
                                ('ieee',
                                 'network id'
                                 'endpoint id',

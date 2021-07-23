@@ -35,8 +35,10 @@
 # BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
 # }}}
+import argparse
 
-import zigpy
+from zigpy import ControllerApplication
+import zigpy.application
 import zigpy_xbee
 import zigpy_deconz
 import bellows
@@ -53,15 +55,29 @@ from volttron.platform.agent.known_identities import CONFIGURATION_STORE, PLATFO
 from volttron.utils.persistance import PersistentDict
 from platform_driver.interfaces import BaseInterface, BaseRegister, BasicRevert
 
+arg_parser = argparse.ArgumentParser(description='Enter a Zigbee_device_path, an out directory for the config '
+                                                 'files, and the manufacture of your XBee hub/stick')
+
+arg_parser.add_argument("Zigbee_device_path", type=pathlib.Path,
+                        help="Device path of Z-Stick/hub, /dev/tty...")
+
+arg_parser.add_argument("radio_manufacturer", type=str,
+                        help="Manufacture of Zigbee radio module",
+                        default=sys.stdout)
+
+args = arg_parser.parse_args()
+
 
 class XRegister(BaseRegister):
-    def __init__(self, point_name,  , read_only, units, register_type=None,
+    def __init__(self, point_name, ep_id, ieee, network_id, cluster_id, endpoint_device_type,
                  description=' '):
-        self.register_type = register_type
-        self.units = units
-        self.read_only = read_only
         self.point_name = point_name
+        self.ep_id = ep_id
+        self.ieee = ieee
+        self.cluster_id = cluster_id
         self.description = description
+        self.network_id = network_id
+        self.endpoint_device_type = endpoint_device_type
 
     def get_device_by_ieee(self, ieee_to_find):
         for ieee, dev in self.app.devices.items():
@@ -77,30 +93,28 @@ class Interface(BasicRevert, BaseInterface):
 
     def __init__(self, **kwargs):
         super(Interface, self).__init__(**kwargs)
+        radio = zigpy.application.ControllerApplication
+        if args.radio_manufacure == "ezsp":
+            self.radio = bellows.zigbee.application.ControllerApplication
+        elif args.radio_manufacure == "xbee":
+            self.radio = zigpy_xbee.zigbee.application.ControllerApplication
+        elif args.radio_manufacure == "deconz":
+            self.radio = zigpy_deconz.zigbee.application.ControllerApplication
+        elif args.radio_manufacure == "zigate":
+            self.radio = zigpy_zigate.zigbee.application.ControllerApplication
+        await radio.connect(args.Zigbee_device_path, 57600)
+        self.controller = ControllerApplication(radio)
+        await self.controller.startup(auto_form=True)
 
     def configure(self, config_dict, registry_config_str):
-        global network
+        self.
         self.parse_config(registry_config_str)
-        device = config_dict.get("Z_stick_device_path")
-        options = ZWaveOption(device, config_path="/env/lib/python3.8/site-packages/openzwave/", user_path=".",
-                              cmd_line="")
-        radio
-        if args.radio_manufacure == "ezsp":
-            radio = bellows.zigbee.application.ControllerApplication
-        elif args.radio_manufacure == "xbee":
-            radio = zigpy_xbee.zigbee.application.ControllerApplication
-        elif args.radio_manufacure == "deconz":
-            radio = zigpy_deconz.zigbee.application.ControllerApplication
-        elif args.radio_manufacure == "zigate":
-            radio = zigpy_zigate.zigbee.application.ControllerApplication
-        await radio.connect(args.Zigbee_device_path, 57600)
-        controller = ControllerApplication(radio)
-        await controller.startup(auto_form=True)
 
     def get_point(self, point_name):
         register = self.get_register_by_name(point_name)
-        controller.
-        return result
+
+        clusters = endpoints[register.ep_id].in_clusters + endpoints[register.ep_id].out_clusters
+        return clusters[cluster_id].attribute
 
     def set_point(self, point_name, value):
         """Issue command on zigbee cluster on zha entity."""
@@ -144,23 +158,22 @@ class Interface(BasicRevert, BaseInterface):
             # Skip lines that have no address yet.
             if not regDef['Point Name']:
                 continue
+            
+            ieee = regDef['ieee']
+            network = regDef['network id']
+            point_name = regDef['cluster.name']
+            ep_id = regDef['endpoint id']
+            cluster_id = regDef['cluster_id']
+            endpoint_device_type = regDef['endpoint device type']
+            endpoint_profile_id = regDef['endpoint profile id']
 
-            read_only = regDef['Writable'].lower() != 'true'
-            point_name = regDef['Volttron Point Name']
-            node_id = regDef['Node ID']
-            value = regDef['value']
-            command_class = regDef['COMMAND_CLASS']
-            units = regDef['Units']
 
-            register_type = ZRegister
-
-            register = ZRegister(point_name,
-                                 node_id,
-                                 command_class,
-                                 value,
-                                 read_only,
-                                 point_name,
-                                 units,
-                                 register_type)
+            register = XRegister(point_name,
+                                 ep_id,
+                                 cluster_id,
+                                 endpoint_device_type,
+                                 endpoint_profile_id,
+                                 ieee,
+                                 network)
             self.insert_register(register)
 
