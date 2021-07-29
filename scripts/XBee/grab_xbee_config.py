@@ -101,11 +101,19 @@ config = {
     "driver_type": "openzwave",
     "registry_config": "config://registry_configs/{}".format(str(network.nodes[node].product_name) + ".csv")
 }
+class MainListener():
 
+    def __init__(self, controller):
+        self.controller = controller
+
+    def device_joined(self, device):
+        print(f"device joined: {device}")
+
+    def attribute_updated(self, device, attribute_id, value):
+       print(f"attribute update {device} {attribute_id} {value}")
 
 
 def main():
-    radio
     if args.radio_manufacturer == "ezsp":
         radio = bellows.zigbee.application.ControllerApplication
     elif args.radio_manufacturer == "deconz":
@@ -141,6 +149,7 @@ def main():
                     'endpoint device type': ep.device_type,
                     'Point Name': cluster.name,
                     'cluster id': cluster_id,
+                    'manufacture id': dev.manufacturer_id,
                     'Notes': "",
                 }
                 config_writer.writerow(results)

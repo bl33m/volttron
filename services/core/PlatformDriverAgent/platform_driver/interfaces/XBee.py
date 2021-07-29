@@ -37,8 +37,8 @@
 # }}}
 import argparse
 
-from zigpy import ControllerApplication
-import zigpy.application
+import zigpy
+import zigpy.application import ControllerApplication
 import zigpy_xbee
 import zigpy_deconz
 import bellows
@@ -54,18 +54,6 @@ from volttron.platform.agent import utils
 from volttron.platform.agent.known_identities import CONFIGURATION_STORE, PLATFORM_DRIVER
 from volttron.utils.persistance import PersistentDict
 from platform_driver.interfaces import BaseInterface, BaseRegister, BasicRevert
-
-arg_parser = argparse.ArgumentParser(description='Enter a Zigbee_device_path, an out directory for the config '
-                                                 'files, and the manufacture of your XBee hub/stick')
-
-arg_parser.add_argument("Zigbee_device_path", type=pathlib.Path,
-                        help="Device path of Z-Stick/hub, /dev/tty...")
-
-arg_parser.add_argument("radio_manufacturer", type=str,
-                        help="Manufacture of Zigbee radio module",
-                        default=sys.stdout)
-
-args = arg_parser.parse_args()
 
 
 class XRegister(BaseRegister):
@@ -91,10 +79,11 @@ class Interface(BasicRevert, BaseInterface):
     """
     zha_gateway = ""
 
+    #incorporate config file in order to look up manufacture
     def __init__(self, **kwargs):
         super(Interface, self).__init__(**kwargs)
         radio = zigpy.application.ControllerApplication
-        if args.radio_manufacure == "ezsp":
+        if config_dict.radio_manufacure == "ezsp":
             self.radio = bellows.zigbee.application.ControllerApplication
         elif args.radio_manufacure == "xbee":
             self.radio = zigpy_xbee.zigbee.application.ControllerApplication
@@ -112,7 +101,9 @@ class Interface(BasicRevert, BaseInterface):
 
     def get_point(self, point_name):
         register = self.get_register_by_name(point_name)
-
+        #get cluster
+        controller.get_device(register.network_id).endpoints[register.ep_id]
+        #use cluster and pass attribute
         clusters = endpoints[register.ep_id].in_clusters + endpoints[register.ep_id].out_clusters
         return clusters[cluster_id].attribute
 
@@ -120,25 +111,13 @@ class Interface(BasicRevert, BaseInterface):
         """Issue command on zigbee cluster on zha entity."""
         register = self.get_register_by_name(point_name)
         ieee = register.ieee
-        endpoint_id = register.ATTR_ENDPOINT_ID
-        cluster_id = register.ATTR_CLUSTER_ID
-        cluster_type = register.ATTR_CLUSTER_TYPE
-        command = register.ATTR_COMMAND
-        command_type = register.ATTR_COMMAND_TYPE
-        args = register.ATTR_ARGS
-        manufacturer = register.ATTR_MANUFACTURER or None
-        zha_device = zha_gateway.get_device(ieee)
-        if zha_device is not None:
-            response = await zha_device.issue_cluster_command(
-                endpoint_id,
-                cluster_id,
-                command,
-                command_type,
-                *args,
-                cluster_type=cluster_type,
-                manufacturer=manufacturer,
-            )
-        return response
+        endpoint_id = register.ep_id
+        cluster_id = register.cluster_id
+        command = value
+        manufacturer = register.manufacture_id or None
+        device = self.controller.get_device(ieee)
+        #still missing sequence number and the endpoint object, try finding these in the endpoint class
+        return device.request(cluster_id, endpoint_id, command, manufacturer)
 
     def scrape_all(self):
         result = {}
