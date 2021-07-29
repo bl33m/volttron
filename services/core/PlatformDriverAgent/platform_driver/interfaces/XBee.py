@@ -56,6 +56,12 @@ from volttron.utils.persistance import PersistentDict
 from platform_driver.interfaces import BaseInterface, BaseRegister, BasicRevert
 
 
+class MainListener():
+
+    def attribute_updated(self, cluster, attribute_id, value):
+        device = cluster.endpoint.device
+
+
 class XRegister(BaseRegister):
     def __init__(self, point_name, ep_id, ieee, network_id, cluster_id, endpoint_device_type,
                  description=' '):
@@ -85,18 +91,17 @@ class Interface(BasicRevert, BaseInterface):
         radio = zigpy.application.ControllerApplication
         if config_dict.radio_manufacure == "ezsp":
             self.radio = bellows.zigbee.application.ControllerApplication
-        elif args.radio_manufacure == "xbee":
+        elif config_dict.radio_manufacure == "xbee":
             self.radio = zigpy_xbee.zigbee.application.ControllerApplication
-        elif args.radio_manufacure == "deconz":
+        elif config_dict.radio_manufacure == "deconz":
             self.radio = zigpy_deconz.zigbee.application.ControllerApplication
-        elif args.radio_manufacure == "zigate":
+        elif config_dict.radio_manufacure == "zigate":
             self.radio = zigpy_zigate.zigbee.application.ControllerApplication
         await radio.connect(args.Zigbee_device_path, 57600)
         self.controller = ControllerApplication(radio)
         await self.controller.startup(auto_form=True)
 
     def configure(self, config_dict, registry_config_str):
-        self.
         self.parse_config(registry_config_str)
 
     def get_point(self, point_name):
@@ -108,7 +113,6 @@ class Interface(BasicRevert, BaseInterface):
         return clusters[cluster_id].attribute
 
     def set_point(self, point_name, value):
-        """Issue command on zigbee cluster on zha entity."""
         register = self.get_register_by_name(point_name)
         ieee = register.ieee
         endpoint_id = register.ep_id

@@ -162,6 +162,7 @@ def main():
                     'Point Name': cluster.name,
                     'cluster id': cluster_id,
                     'manufacture id': dev.manufacturer_id,
+                    'value': 0,
                     'Notes': "",
                 }
                 config_writer.writerow(results)
