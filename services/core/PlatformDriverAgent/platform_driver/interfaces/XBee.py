@@ -68,7 +68,7 @@ class XRegister(BaseRegister):
         self.endpoint_device_type = endpoint_device_type
 
     def get_device_by_ieee(self, ieee_to_find):
-        for ieee, dev in self.app.devices.items():
+        for ieee, dev in self.controller.devices.items():
             if self.ieee == ieee_to_find:
                 return dev
 

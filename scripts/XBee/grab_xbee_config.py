@@ -96,8 +96,9 @@ args = arg_parser.parse_args()
 
 config = {
     "driver_config": {"Zigbee_device_path": args.Z_device_path,
-                      "IO_LINEIN": args.radio_manufacture},
-                      "IO_Line out": args.io_line
+                      "zigbee database": args.database,
+                      "IO_LINEIN": args.radio_manufacture,
+                      "IO_Line out": args.io_line},
     "driver_type": "openzwave",
     "registry_config": "config://registry_configs/{}".format(str(network.nodes[node].product_name) + ".csv")
 }
@@ -121,9 +122,18 @@ def main():
     elif args.radio_manufacturer == "zigate":
         radio = zigpy_zigate.zigbee.application.ControllerApplication
 
-    await radio.connect(args.Zigbee_device_path, 57600)
+    controller = await ControllerApplication.new(
+        config=ControllerApplication.SCHEMA({
+            "database_path": "/tmp/zigbee.db",
+            "device": {
+                "path": args.Z_device_path,
+            }
+        }),
+        auto_form=True,
+        start_radio=True,
+    )
 
-    controller = ControllerApplication(radio)
+    listener = MainListener(controller)
     await controller.startup(auto_form=True)
 
     config_writer = DictWriter(args.radio_manufacture + ".csv",
@@ -137,6 +147,8 @@ def main():
                                 'Notes'))
     config_writer.writeheader()
 
+    for device in controller.devices.values():
+        listener.device_initialized(device, new=False)
 
     for ieee, dev in controller.devices.items():
         for epid, ep in controller.devices.items():
@@ -157,8 +169,9 @@ def main():
 
 
 try:
-    main()
+    loop.run_forver()
 except Exception as e:
     print("an error has occurred: %s", e)
 finally:
-    print("finally")
+    loop.run_until_complete(loop.shutdown_asyncgens())
+    loop.close()
