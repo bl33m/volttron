@@ -206,7 +206,7 @@ class ConfigStoreService(Agent):
     def manage_list_configs(self, identity):
         result = list(self.store.get(identity, {}).get("store", {}).keys())
         result.sort()
-        return result
+       return result
 
     @RPC.export
     def manage_list_stores(self):

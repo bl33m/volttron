@@ -38,7 +38,7 @@
 import argparse
 
 import zigpy
-import zigpy.application import ControllerApplication
+from zigpy.application import ControllerApplication
 import zigpy_xbee
 import zigpy_deconz
 import bellows
@@ -57,13 +57,15 @@ from platform_driver.interfaces import BaseInterface, BaseRegister, BasicRevert
 
 
 class MainListener():
-
     def attribute_updated(self, cluster, attribute_id, value):
         device = cluster.endpoint.device
+        get_register(device.ieee, cluster.cluster_id)
+
+
 
 
 class XRegister(BaseRegister):
-    def __init__(self, point_name, ep_id, ieee, network_id, cluster_id, endpoint_device_type,
+    def __init__(self, point_name, ep_id, ieee, network_id, cluster_id, endpoint_device_type, cacheValue = None,
                  description=' '):
         self.point_name = point_name
         self.ep_id = ep_id
@@ -71,6 +73,7 @@ class XRegister(BaseRegister):
         self.cluster_id = cluster_id
         self.description = description
         self.network_id = network_id
+        self.cacheValue = None
         self.endpoint_device_type = endpoint_device_type
 
     def get_device_by_ieee(self, ieee_to_find):
@@ -78,10 +81,12 @@ class XRegister(BaseRegister):
             if self.ieee == ieee_to_find:
                 return dev
 
+    def get_register(self):
+
 
 class Interface(BasicRevert, BaseInterface):
     """
-    Interface implementation for use with the python-openzwave library
+    Interface implementation for use with the zigpy library
     """
     zha_gateway = ""
 
@@ -97,11 +102,23 @@ class Interface(BasicRevert, BaseInterface):
             self.radio = zigpy_deconz.zigbee.application.ControllerApplication
         elif config_dict.radio_manufacure == "zigate":
             self.radio = zigpy_zigate.zigbee.application.ControllerApplication
-        await radio.connect(args.Zigbee_device_path, 57600)
-        self.controller = ControllerApplication(radio)
-        await self.controller.startup(auto_form=True)
+
+        controller = await ControllerApplication.new(
+            config=ControllerApplication.SCHEMA({
+                "database_path": "/tmp/zigbee.db",
+                "device": {
+                    "path": args.Z_device_path,
+                }
+            }),
+            auto_form=True,
+            start_radio=True,
+        )
+
+        listener = MainListener(controller)
+        await controller.startup(auto_form=True)
 
     def configure(self, config_dict, registry_config_str):
+        vip.rpc.call(self, "add_device",)
         self.parse_config(registry_config_str)
 
     def get_point(self, point_name):
