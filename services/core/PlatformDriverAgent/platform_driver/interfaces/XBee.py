@@ -166,6 +166,10 @@ class Interface(BasicRevert, BaseInterface):
             cluster_id = regDef['cluster_id']
             endpoint_device_type = regDef['endpoint device type']
             endpoint_profile_id = regDef['endpoint profile id']
+            #needs to be manually entered
+            in_cluster = regDef['In cluster?']
+            #needs to be manually entered
+            poll_only = regDef['Pollable?']
 
 
             register = XRegister(point_name,

@@ -56,9 +56,9 @@ from queue import Queue, Empty
 
 import threading
 
-
-from zigpy.config.validators import cv_boolean
-from zigpy.application import ControllerApplication
+import openzwave
+from openzwave.network import ZWaveNetwork
+from openzwave.network import ZWaveOption
 
 
 class MainLister():
@@ -76,15 +76,15 @@ class MainLister():
         device = cluster.endpoint.device
         write_cov(PLATFORM_DRIVER, device.ieee, cluster.id)
 
-class Zigbeehubproxy(Agent):
+class ZWaveHubProxy(Agent):
     def __init__(self, config_dict):
         self.radio = config_dict('radio library')
         self.app = ControllerApplication
 
-    def read_value(self, device, endpoint_id, attribute, ):
+    def read_value(self, node_id, endpoint_id, attribute, ):
 
 
-        return device.endpoints[endpoint_id].attribute
+        return network.nodes[node_id].values[value_id].data
 
     def write_value(self, device, val, cluster_id, ep_id):
         # No RGB support yet, :(
@@ -96,6 +96,4 @@ class Zigbeehubproxy(Agent):
 
         if ep_id == "Security":
             await device. endpoints[ep_id].on_off.on()
-
-
 
