@@ -62,7 +62,6 @@ _log = logging.getLogger('openzwave')
 
 from volttron.platform import jsonapi
 
-# ZHA_GATEWAY = howww do we get this thing?
 
 # def request(
 # self,
@@ -95,12 +94,9 @@ args = arg_parser.parse_args()
 
 
 config = {
-    "driver_config": {"Zigbee_device_path": args.Z_device_path,
-                      "zigbee database": args.database,
-                      "IO_LINEIN": args.radio_manufacture,
-                      "IO_Line out": args.io_line},
+    "driver_config": {"Zigbee_device_path": args.Zigbee_device_path,
+                      "zigbee database": '/home/bl33m/.config/bellows/app.db'},
     "driver_type": "openzwave",
-    "registry_config": "config://registry_configs/{}".format(str(network.nodes[node].product_name) + ".csv")
 }
 class MainListener():
 
@@ -110,11 +106,22 @@ class MainListener():
     def device_joined(self, device):
         print(f"device joined: {device}")
 
+    async def async_device_joined(self, device):
+        for endpoint_id, endpoint in device.endpoints.items()
+            if not hasattr(endpoint, 'ias_zone'):
+                continue
+
+            endpoint.ias_zone.add_context_listener(self)
+
+            await endpoint.ias_zone.bind()
+            await endpoint.ias_zone.write_attributes({'cie_addr': self.application.ieee})
+            await endpoint.ias_zone.enroll_response(0x00, 0x00)
+
     def attribute_updated(self, device, attribute_id, value):
        print(f"attribute update {device} {attribute_id} {value}")
 
 
-def main():
+async def main():
     if args.radio_manufacturer == "ezsp":
         radio = bellows.zigbee.application.ControllerApplication
     elif args.radio_manufacturer == "deconz":
@@ -124,9 +131,9 @@ def main():
 
     controller = await ControllerApplication.new(
         config=ControllerApplication.SCHEMA({
-            "database_path": "/tmp/zigbee.db",
+            "database_path": "/home/bl33m/.config/bellows/app.db",
             "device": {
-                "path": args.Z_device_path,
+                "path": args.Zigbee_device_path,
             }
         }),
         auto_form=True,
@@ -135,6 +142,7 @@ def main():
 
     listener = MainListener(controller)
     await controller.startup(auto_form=True)
+    
 
     config_writer = DictWriter(args.radio_manufacture + ".csv",
                                ('ieee',
