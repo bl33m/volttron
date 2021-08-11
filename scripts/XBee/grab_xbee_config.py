@@ -159,7 +159,7 @@ async def main():
     print("init network")
     await controller.startup(auto_form=True)
     await asyncio.sleep(0.5)
-    controller.shutdown()
+    await controller.shutdown()
 
 
     print("allow joins for 2 minutes")
