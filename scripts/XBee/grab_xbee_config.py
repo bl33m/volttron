@@ -110,6 +110,8 @@ config = {
                       "zigbee database": '/home/bl33m/.config/bellows/app.db'},
     "driver_type": "openzwave",
 }
+
+
 class MainListener():
 
     def __init__(self, controller):
@@ -117,6 +119,7 @@ class MainListener():
 
     def device_joined(self, device):
         print(f"device joined: {device}")
+        asyncio.create_task(self.async_device_joined(device))
 
     async def async_device_joined(self, device):
         for endpoint_id, endpoint in device.endpoints.items():
@@ -152,19 +155,22 @@ async def main():
         auto_form=True,
         start_radio=True,
     )
+    
+    
 
     listener = MainListener(controller)
     controller.add_listener(listener)
     
-    print("init network")
-    await controller.startup(auto_form=True)
-    await asyncio.sleep(0.5)
-    await controller.shutdown()
-
+    device = controller.get_device_by_ieee('00:15:8d:00:06:ed:8b:32')
+    for endpoint_id, endpoint in device.endpoints.items():
+        print(endpoint)
+    
 
     print("allow joins for 2 minutes")
     await controller.permit(120)
     await asyncio.sleep(120)
+    
+    
 
     await asyncio.get_running_loop().create_future()
     
