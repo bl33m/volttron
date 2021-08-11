@@ -35,6 +35,18 @@
 # BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
 # }}}
+
+
+# This script is intended to allow a user to add a device to an existing zigbee network
+# Once run the coordinator will be placed in pairing mode for the alloted time
+# The can then place a device into pairing mode, once a device is recognized and paired
+# a VOLTTRON registry csv will be made according to device functionality 
+# The device will also be added to the zigpy SQLite db for zigpy to read from
+
+# Some times you need to get a device awake durring the pairing process, to do this 
+# press the pairing button ocasionally
+
+
 from argparse import ArgumentParser
 import datetime
 import logging
@@ -107,7 +119,7 @@ class MainListener():
         print(f"device joined: {device}")
 
     async def async_device_joined(self, device):
-        for endpoint_id, endpoint in device.endpoints.items()
+        for endpoint_id, endpoint in device.endpoints.items():
             if not hasattr(endpoint, 'ias_zone'):
                 continue
 
@@ -133,7 +145,8 @@ async def main():
         config=ControllerApplication.SCHEMA({
             "database_path": "/home/bl33m/.config/bellows/app.db",
             "device": {
-                "path": args.Zigbee_device_path,
+                "path": str(args.Zigbee_device_path),
+                "baudrate": 57600
             }
         }),
         auto_form=True,
@@ -141,46 +154,52 @@ async def main():
     )
 
     listener = MainListener(controller)
-    await controller.startup(auto_form=True)
+    controller.add_listener(listener)
     
-
-    config_writer = DictWriter(args.radio_manufacture + ".csv",
-                               ('ieee',
-                                'network id'
-                                'endpoint id',
-                                'endpoint profile id',
-                                'endpoint device type',
-                                'Point Name',
-                                'cluster id',
-                                'Notes'))
-    config_writer.writeheader()
-
-    for device in controller.devices.values():
-        listener.device_initialized(device, new=False)
-
-    for ieee, dev in controller.devices.items():
-        for epid, ep in controller.devices.items():
-            for cluster_id, cluster in ep.in_clusters + ep.out_clusters:
-                results = {
-                    'ieee': ieee,
-                    'network id': dev.nwk,
-                    'endpoint id': epid,
-                    'endpoint profile id': ep.profile_id,
-                    'endpoint device type': ep.device_type,
-                    'Point Name': cluster.name,
-                    'cluster id': cluster_id,
-                    'manufacture id': dev.manufacturer_id,
-                    'value': 0,
-                    'Notes': "",
-                }
-                config_writer.writerow(results)
+    print("init network")
+    await controller.startup(auto_form=True)
+    await asyncio.sleep(0.5)
+    controller.shutdown()
 
 
+    print("allow joins for 2 minutes")
+    await controller.permit(120)
+    await asyncio.sleep(120)
 
-try:
-    loop.run_forver()
-except Exception as e:
-    print("an error has occurred: %s", e)
-finally:
-    loop.run_until_complete(loop.shutdown_asyncgens())
-    loop.close()
+    await asyncio.get_running_loop().create_future()
+    
+#    config_writer = DictWriter(args.radio_manufacture + ".csv",
+#                               ('ieee',
+#                                'network id'
+#                                'endpoint id',
+#                                'endpoint profile id',
+#                                'endpoint device type',
+#                                'Point Name',
+#                                'cluster id',
+#                                'Notes'))
+#    config_writer.writeheader()
+
+#    for device in controller.devices.values():
+#       listener.device_initialized(device, new=False)
+#
+#    for ieee, dev in controller.devices.items():
+#        for epid, ep in controller.devices.items():
+#            for cluster_id, cluster in ep.in_clusters + ep.out_clusters:
+#                results = {
+#                    'ieee': ieee,
+#                    'network id': dev.nwk,
+#                    'endpoint id': epid,
+#                    'endpoint profile id': ep.profile_id,
+#                    'endpoint device type': ep.device_type,
+#                    'Point Name': cluster.name,
+#                    'cluster id': cluster_id,
+#                    'manufacture id': dev.manufacturer_id,
+#                    'value': 0,
+#                  'Notes': "",
+#               }
+#                config_writer.writerow(results)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
