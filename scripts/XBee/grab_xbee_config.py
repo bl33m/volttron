@@ -161,7 +161,7 @@ async def main():
     listener = MainListener(controller)
     controller.add_listener(listener)
     
-    device = controller.get_device_by_ieee('00:15:8d:00:06:ed:8b:32')
+    device = controller.get_device('00:15:8d:00:06:ed:8b:32')
     for endpoint_id, endpoint in device.endpoints.items():
         print(endpoint)
     
