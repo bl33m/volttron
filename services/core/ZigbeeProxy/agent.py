@@ -40,7 +40,7 @@ import pandas as pd
 
 import logging
 import os
-import  sys
+import sys
 
 from volttron.platform.vip.agent import Agent, RPC
 from volttron.platform.async_ import AsyncCall
@@ -69,14 +69,27 @@ class MainLister():
         for endpoint_id, endpoint in device.items():
             if not hasattr(endpoint, 'ias_zone'):
                 continue
+            
+            # figure out what this ias stuff does, its probably in the zcl
+            endpoint.ias_zone.add_context_listener(self)
 
-            endpoint.ias_zone.bind()
-            endpoint.ias_zone.write_attributes({'cie_addr'})
+            await endpoint.ias_zone.bind()
+            await endpoint.ias_zone.write_attributes({'cie_addr': self.application.ieee})
+            await endpoint.ias_zone.enroll_response(0x00, 0x00)
+
+    def device_initialized(self, device, *, new=True):
+        print(f"Device is ready: new = {new} device = {device}")
+        
+        for ep_id, endpoint in device.endpoints.items():
+            # skip zdo
+            if ep_id == 0:
+                continue
+            for cluster in endpoint.in_clusters.values():
+                cluster.add_context_listener(self)
 
     def attribute_updated(self, cluster, attribute_id, value):
-        panda
         device = cluster.endpoint.device
-        write_cov(PLATFORM_DRIVER, device.ieee, cluster.id)
+        pd[device.ieee]['value'] = value
 
 class Zigbeehubproxy(Agent):
     def __init__(self, config_dict):
@@ -90,7 +103,7 @@ class Zigbeehubproxy(Agent):
         return device.endpoints[endpoint_id].clusters[cluster_id].attributes[attribute_id]
     
     def read_val(self, ieee, endpoint_id, cluster_id, attribute_id):
-        return self.db[ieee][value]
+        return db[ieee][value]
 
     def write_value(self, device, val, cluster_id, ep_id):
         # No RGB support yet, :(
