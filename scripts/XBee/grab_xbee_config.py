@@ -136,14 +136,21 @@ class MainListener():
         print(f"Device is ready: new = {new} device = {device}")
 
         for ep_id, endpoint in device.endpoints.items():
+            #ep 0 = zdo
             if ep_id == 0:
                 continue
+            #not sure if this will take up all the device memory
             for cluster in endpoint.in_clusters.values():
                 cluster.add_context_listener(self)
 
 
     def attribute_updated(self, cluster, attribute, value):
-        print(f"attribute update {attribute} {value/100.0} {cluster}")
+        device = cluster.endpoint.device
+        endpoint = cluster.endpoint
+        try:
+            print(f"attribute update {cluster.attributes[attribute][0]} {value/100.0} {cluster.name}")
+        except Exception:
+            print(f"attr not supported by zcl {cluster} {attribute} {value}")
 
 
 async def main():
@@ -175,41 +182,10 @@ async def main():
         listener.device_initialized(dev, new=False)
         
     
-    
-    for device in controller.devices.values():
-        print('device wid it'+str(device.ieee))
-        for endpoint_id, endpoint in device.endpoints.items():
-            if endpoint_id > 0:
-                print(f"endpoints wid it {endpoint_id} {endpoint.manufacturer} {endpoint.model}")
-                for cluster_id, cluster in endpoint.in_clusters.items():
-                    print(f"clusters wid it {cluster_id} {cluster.name}")
-                    if cluster_id == 1026:
-                        try: 
-                            await cluster.bind()
-                            #cluster.add_listener(listener)
-                        except Exception as e:
-                            print(str(e))
-                    if cluster_id == 1029:
-                        try:
-                            await cluster.bind()
-                            #cluster.add_listener(listener)
-                        except Exception as e:
-                            print(str(e))
-                    if cluster_id == 1027:
-                        try: 
-                            await cluster.bind()
-                            #cluster.add_listener(listener)
-                        except Exception as e:
-                            print(str(e))
-    
-
-    
-
-    
 
     print("allow joins for 2 minutes")
-    await controller.permit(2)
-    await asyncio.sleep(2)
+    await controller.permit(120)
+    await asyncio.sleep(120)
     
     
 
