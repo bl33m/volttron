@@ -132,8 +132,18 @@ class MainListener():
             await endpoint.ias_zone.write_attributes({'cie_addr': self.application.ieee})
             await endpoint.ias_zone.enroll_response(0x00, 0x00)
 
-    def attribute_updated(self, attribute, value):
-       print(f"attribute update {attribute} {value/100.0}")
+    def device_initialized(self, device, *, new=True):
+        print(f"Device is ready: new = {new} device = {device}")
+
+        for ep_id, endpoint in device.endpoints.items():
+            if ep_id == 0:
+                continue
+            for cluster in endpoint.in_clusters.values():
+                cluster.add_context_listener(self)
+
+
+    def attribute_updated(self, cluster, attribute, value):
+        print(f"attribute update {attribute} {value/100.0} {cluster}")
 
 
 async def main():
@@ -161,9 +171,10 @@ async def main():
     listener = MainListener(controller)
     controller.add_listener(listener)
 
-    for ieee, dev in controller.devices.items():
-        print(ieee)
-        print(dev.get_signature)
+    for dev in controller.devices.items():
+        listener.device_initialized(dev, new=FALSE)
+        
+    
     
     for device in controller.devices.values():
         print('device wid it'+str(device.ieee))
@@ -175,19 +186,19 @@ async def main():
                     if cluster_id == 1026:
                         try: 
                             await cluster.bind()
-                            cluster.add_listener(listener)
+                            #cluster.add_listener(listener)
                         except Exception as e:
                             print(str(e))
                     if cluster_id == 1029:
                         try:
                             await cluster.bind()
-                            cluster.add_listener(listener)
+                            #cluster.add_listener(listener)
                         except Exception as e:
                             print(str(e))
                     if cluster_id == 1027:
                         try: 
                             await cluster.bind()
-                            cluster.add_listener(listener)
+                            #cluster.add_listener(listener)
                         except Exception as e:
                             print(str(e))
     
