@@ -171,8 +171,8 @@ async def main():
     listener = MainListener(controller)
     controller.add_listener(listener)
 
-    for dev in controller.devices.items():
-        listener.device_initialized(dev, new=FALSE)
+    for dev in controller.devices.values():
+        listener.device_initialized(dev, new=False)
         
     
     
