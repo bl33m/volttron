@@ -35,6 +35,7 @@
 # BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
 # }}}
+
 import argparse
 
 import zigpy
@@ -54,13 +55,6 @@ from volttron.platform.agent import utils
 from volttron.platform.agent.known_identities import CONFIGURATION_STORE, PLATFORM_DRIVER
 from volttron.utils.persistance import PersistentDict
 from platform_driver.interfaces import BaseInterface, BaseRegister, BasicRevert
-
-
-class MainListener():
-    def attribute_updated(self, cluster, attribute_id, value):
-        device = cluster.endpoint.device
-        get_register(device.ieee, cluster.cluster_id)
-
 
 
 
@@ -93,50 +87,27 @@ class Interface(BasicRevert, BaseInterface):
     #incorporate config file in order to look up manufacture
     def __init__(self, **kwargs):
         super(Interface, self).__init__(**kwargs)
-        radio = zigpy.application.ControllerApplication
-        if config_dict.radio_manufacure == "ezsp":
-            self.radio = bellows.zigbee.application.ControllerApplication
-        elif config_dict.radio_manufacure == "xbee":
-            self.radio = zigpy_xbee.zigbee.application.ControllerApplication
-        elif config_dict.radio_manufacure == "deconz":
-            self.radio = zigpy_deconz.zigbee.application.ControllerApplication
-        elif config_dict.radio_manufacure == "zigate":
-            self.radio = zigpy_zigate.zigbee.application.ControllerApplication
-
-        controller = await ControllerApplication.new(
-            config=ControllerApplication.SCHEMA({
-                "database_path": "/tmp/zigbee.db",
-                "device": {
-                    "path": args.Z_device_path,
-                }
-            }),
-            auto_form=True,
-            start_radio=True,
-        )
-
-        listener = MainListener(controller)
-        await controller.startup(auto_form=True)
-
+        
     def configure(self, config_dict, registry_config_str):
-        vip.rpc.call(self, "add_device",)
         self.parse_config(registry_config_str)
 
     def get_point(self, point_name):
         register = self.get_register_by_name(point_name)
-        #get cluster
-        controller.get_device(register.network_id).endpoints[register.ep_id]
-        #use cluster and pass attribute
-        clusters = endpoints[register.ep_id].in_clusters + endpoints[register.ep_id].out_clusters
-        return clusters[cluster_id].attribute
+        if register.is_command:
+            raise IOError("Trying to read a zcl command")
+        if register.listener:
+            result = self.vip.rpc.call(register.ieee, 'read_val', register.ep_id,
+                    register.cluster_id, register.attribute_id).get(timeout=self.timeout)
+        elif:
+            result = self.vip.rpc.call(register.ieee, 'poll_val', register.ep_id,
+                    register.cluster_id, register.attribute_id).get(timeout=self.timeout)
+        return result
 
     def set_point(self, point_name, value):
         register = self.get_register_by_name(point_name)
-        ieee = register.ieee
-        endpoint_id = register.ep_id
-        cluster_id = register.cluster_id
-        command = value
-        manufacturer = register.manufacture_id or None
-        device = self.controller.get_device(ieee)
+        if register.is_command
+            result = self.vip.rpc.call(register.ieee, 'issue_command', register.ep_id.
+                    register.cluster_id, register.attribute_id.get(timeout=self.timeout)
         #still missing sequence number and the endpoint object, try finding these in the endpoint class
         return device.request(cluster_id, endpoint_id, command, manufacturer)
 
@@ -162,9 +133,9 @@ class Interface(BasicRevert, BaseInterface):
             ieee = regDef['ieee']
             network = regDef['network id']
             point_name = regDef['cluster.name']
-            ep_id = regDef['endpoint id']
+            ep_id = regDef['endpoint_id']
             cluster_id = regDef['cluster_id']
-            endpoint_device_type = regDef['endpoint device type']
+            attribute_id = regDef['endpoint device type']
             endpoint_profile_id = regDef['endpoint profile id']
             #needs to be manually entered
             in_cluster = regDef['In cluster?']
@@ -173,11 +144,12 @@ class Interface(BasicRevert, BaseInterface):
 
 
             register = XRegister(point_name,
-                                 ep_id,
-                                 cluster_id,
-                                 endpoint_device_type,
-                                 endpoint_profile_id,
-                                 ieee,
-                                 network)
+                    ieee,
+                    ep_id,
+                    cluster_id,
+                    endpoint_id,
+                    attribute_id,
+                    command,
+                    poll_only)
             self.insert_register(register)
 
