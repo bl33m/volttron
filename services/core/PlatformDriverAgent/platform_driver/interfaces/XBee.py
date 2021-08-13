@@ -112,13 +112,7 @@ class Interface(BasicRevert, BaseInterface):
         return device.request(cluster_id, endpoint_id, command, manufacturer)
 
     def scrape_all(self):
-        result = {}
-
-        read_registers = self.get_registers_by_type("byte", True)
-        write_registers = self.get_registers_by_type("byte", False)
-        for register in read_registers + write_registers:
-            result[register.point_name] = "some getter method from HA"
-
+        result = self.vip.rpc.call('scrape_all').get(timeout=self.timeout)
         return result
 
     def parse_config(self, configDict):
@@ -130,17 +124,14 @@ class Interface(BasicRevert, BaseInterface):
             if not regDef['Point Name']:
                 continue
             
-            ieee = regDef['ieee']
-            network = regDef['network id']
-            point_name = regDef['cluster.name']
-            ep_id = regDef['endpoint_id']
-            cluster_id = regDef['cluster_id']
-            attribute_id = regDef['endpoint device type']
-            endpoint_profile_id = regDef['endpoint profile id']
-            #needs to be manually entered
-            in_cluster = regDef['In cluster?']
-            #needs to be manually entered
-            poll_only = regDef['Pollable?']
+            ieee = regDef.get('ieee')
+            network = regDef.get('network id')
+            point_name = regDef.get('cluster.name')
+            ep_id = regDef.get('endpoint_id')
+            cluster_id = regDef.get('cluster_id')
+            attribute_id = regDef.get('endpoint device type')
+            endpoint_profile_id = regDef.get('endpoint profile id')
+            is_command = regDef.get('is_command')
 
 
             register = XRegister(point_name,

@@ -36,6 +36,7 @@
 # under Contract DE-AC05-76RL01830
 # }}}
 
+import pandas as pd
 
 import logging
 import os
@@ -73,6 +74,7 @@ class MainLister():
             endpoint.ias_zone.write_attributes({'cie_addr'})
 
     def attribute_updated(self, cluster, attribute_id, value):
+        panda
         device = cluster.endpoint.device
         write_cov(PLATFORM_DRIVER, device.ieee, cluster.id)
 
@@ -80,11 +82,15 @@ class Zigbeehubproxy(Agent):
     def __init__(self, config_dict):
         self.radio = config_dict('radio library')
         self.app = ControllerApplication
+        create_device_database()
 
-    def read_value(self, device, endpoint_id, attribute, ):
-
-
-        return device.endpoints[endpoint_id].attribute
+    def pol_val(self, ieee, endpoint_id, cluster_id, attribute_id):
+        device = controller.get_device(ieee) 
+        
+        return device.endpoints[endpoint_id].clusters[cluster_id].attributes[attribute_id]
+    
+    def read_val(self, ieee, endpoint_id, cluster_id, attribute_id):
+        return self.db[ieee][value]
 
     def write_value(self, device, val, cluster_id, ep_id):
         # No RGB support yet, :(
@@ -96,6 +102,17 @@ class Zigbeehubproxy(Agent):
 
         if ep_id == "Security":
             await device. endpoints[ep_id].on_off.on()
+   
+    # make sure index of the network value db is the ieees
+    def create_device_database(self):
+        return "use registry configs to create network database of values"
+
+def main(argv=sys.argv):
+    utils.vip_main(ZigbeeHubAgent, identity="platform.ZigbeeHub", version=__version__)
 
 
-
+if __name__ == '__main__':
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        pass
