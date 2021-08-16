@@ -95,6 +95,7 @@ def ZigbeeHubAgent(config_path, **kwargs):
     config = utils.load_config(config_path)
     device_path = config["device_address"]
     database_path = config["database_path"]
+    return Zigbeehubproxy(device_path, database_path)
 
 class Zigbeehubproxy(Agent):
     def __init__(self, database_path, device_path):
