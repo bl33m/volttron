@@ -74,20 +74,6 @@ _log = logging.getLogger('openzwave')
 
 from volttron.platform import jsonapi
 
-
-# def request(
-# self,
-# device,
-# profile,
-# cluster,
-# src_ep,
-# dst_ep,
-# sequence,
-# data,
-# expect_reply = True,
-# use_ieee = False,
-# )
-
 arg_parser = argparse.ArgumentParser(description='Enter a Zigbee_device_path, an out directory for the config '
                                                  'files, and the manufacture of your XBee hub/stick')
 

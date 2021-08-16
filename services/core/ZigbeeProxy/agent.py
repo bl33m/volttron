@@ -91,10 +91,28 @@ class MainLister():
         device = cluster.endpoint.device
         pd[device.ieee]['value'] = value
 
+def ZigbeeHubAgent(config_path, **kwargs):
+    config = utils.load_config(config_path)
+    device_path = config["device_address"]
+    database_path = config["database_path"]
+
 class Zigbeehubproxy(Agent):
-    def __init__(self, config_dict):
-        self.radio = config_dict('radio library')
-        self.app = ControllerApplication
+    def __init__(self, database_path, device_path):
+        self.controller = await ControllerApplication.new(
+                config=ControllerApplication.SCHEMA({
+                    "database_path": database_path,
+                    "device": {
+                        "path": device_path,
+                        "baudrate": 57600
+                    }
+                }),
+                auto_form=True,
+                start_radio=True,
+        )
+        lister = MainListner(self.controller)
+        self.controller.addd_listener(listener)
+        for dev in controller.devices.values():
+            listener.device_initialized(dev, new=False)
         create_device_database()
 
     def pol_val(self, ieee, endpoint_id, cluster_id, attribute_id):
@@ -118,6 +136,7 @@ class Zigbeehubproxy(Agent):
    
     # make sure index of the network value db is the ieees
     def create_device_database(self):
+        for
         return "use registry configs to create network database of values"
 
 def main(argv=sys.argv):
