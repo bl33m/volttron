@@ -119,14 +119,19 @@ class MainListener():
 
     def device_initialized(self, device, *, new=True):
         print(f"Device is ready: new = {new} device = {device}")
-        config_writer = DictWriter(device.ieee + ".csv",
+        config_writer = DictWriter(open(str(device.ieee) + ".csv", 'w'),
                                        ('ieee',
-                                        'network id'
-                                        'endpoint id',
-                                        'endpoint profile id',
-                                        'endpoint device type',
-                                        'Point Name',
-                                        'cluster id',
+                                        'network_id',
+                                        'endpoint_id',
+                                        'endpoint_profile_id',
+                                        'endpoint_device_type',
+                                        'command',
+                                        'attribute',
+                                        'attribute_id',
+                                        'Point_Name',
+                                        'cluster_id',
+                                        'is_command',
+                                        'value',
                                         'Notes'))
         config_writer.writeheader()
 
@@ -141,21 +146,38 @@ class MainListener():
                 for command in cluster.commands:
                     results = {
                         'ieee': device.ieee,
-                        'network id': device.nwk,
-                        'endpoint id': ep_id,
-                        'endpoint profile id': endpoint.profile_id,
-                        'endpoint device type': endpoint.device_type,
+                        'network_id': device.nwk,
+                        'endpoint_id': ep_id,
+                        'endpoint_profile_id': endpoint.profile_id,
+                        'endpoint_device_type': endpoint.device_type,
                         'command': command,
                         'attribute': "none",
-                        'Point Name': cluster.name + device.nwk,
-                        'cluster id': cluster.cluster_id,
+                        'attribute_id': "none",
+                        'Point_Name': str(cluster.name) + str(command) + str(device.nwk),
+                        'cluster_id': cluster.cluster_id,
                         'is_command': "True",
                         'value': 0,
                         'Notes': "",
                     }
                     config_writer.writerow(results)
-                for attribute in cluster.attributes:
-                    print(attribute)
+                for attribute_id in cluster.attributes:
+                     results = {
+                        'ieee': device.ieee,
+                        'network_id': device.nwk,
+                        'endpoint_id': ep_id,
+                        'endpoint_profile_id': endpoint.profile_id,
+                        'endpoint_device_type': endpoint.device_type,
+                        'command': command,
+                        'attribute': cluster.attributes[attribute_id][0],
+                        'attribute_id': attribute_id,
+                        'Point_Name': str(cluster.name) + str(cluster.attributes[attribute_id][0]) + str(device.nwk),
+                        'cluster_id': cluster.cluster_id,
+                        'is_command': "True",
+                        'value': 0,
+                        'Notes': "",
+                        }
+                     config_writer.writerow(results)
+
 
     def attribute_updated(self, cluster, attribute, value):
         device = cluster.endpoint.device
