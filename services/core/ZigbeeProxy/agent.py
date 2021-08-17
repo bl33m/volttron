@@ -59,10 +59,10 @@ import threading
 
 
 from zigpy.config.validators import cv_boolean
-from zigpy.application import ControllerApplication
+from bellows.zigbee.application import ControllerApplication
 
 
-class MainLister():
+class MainListener():
     def device_joined(self, device):
 
     async def async_device_joined(self, device):
@@ -95,10 +95,11 @@ def ZigbeeHubAgent(config_path, **kwargs):
     config = utils.load_config(config_path)
     device_path = config["device_address"]
     database_path = config["database_path"]
-    return Zigbeehubproxy(device_path, database_path)
+    registry_list = config["registry_list"]
+    return Zigbeehubproxy(device_path, database_path, registry_list)
 
 class Zigbeehubproxy(Agent):
-    def __init__(self, database_path, device_path):
+    def __init__(self, database_path, device_path, registry_list):
         self.controller = await ControllerApplication.new(
                 config=ControllerApplication.SCHEMA({
                     "database_path": database_path,
@@ -110,31 +111,31 @@ class Zigbeehubproxy(Agent):
                 auto_form=True,
                 start_radio=True,
         )
-        lister = MainListner(self.controller)
-        self.controller.addd_listener(listener)
-        for dev in controller.devices.values():
+        listener = MainListener(self.controller)
+        self.controller.add_listener(listener)
+        for dev in self.controller.devices.values():
             listener.device_initialized(dev, new=False)
-        create_device_database()
+        self.create_device_database(registry_list)
 
     def pol_val(self, ieee, endpoint_id, cluster_id, attribute_id):
-        device = controller.get_device(ieee) 
+        device = self.controller.get_device(ieee)
         
         return device.endpoints[endpoint_id].clusters[cluster_id].attributes[attribute_id]
     
     def read_val(self, ieee, endpoint_id, cluster_id, attribute_id):
         return db[ieee][value]
 
-    def write_value(self, device, val, cluster_id, ep_id):
-        # No RGB support yet, :(
-        if ep_id == "Lighting":
-            if val == True:
-                await device.endpoints[ep_id].on_off.on()
-            else:
-                await device.endpoints[ep_id].on_off.off()
+    def write_value(self, ieee, endpoint_id, cluster_id, attribute_id, command, value):
+        device = self.controller.devices[ieee]
+        endpoint = device.endpoints[endpoint_id]
+        cluster = endpoint.in_clusters[cluster_id]
 
-        if ep_id == "Security":
-            await device. endpoints[ep_id].on_off.on()
-   
+        if command != None:
+            getattr(cluster,command)(value)
+
+    def scrape_all(self):
+
+
     # make sure index of the network value db is the ieees
     def create_device_database(self):
         for

@@ -90,7 +90,6 @@ arg_parser.add_argument("--out-directory", type=pathlib.Path,
 
 args = arg_parser.parse_args()
 
-
 config = {
     "driver_config": {"Zigbee_device_path": args.Zigbee_device_path,
                       "zigbee database": '/home/bl33m/.config/bellows/app.db'},
@@ -120,33 +119,54 @@ class MainListener():
 
     def device_initialized(self, device, *, new=True):
         print(f"Device is ready: new = {new} device = {device}")
+        config_writer = DictWriter(device.ieee + ".csv",
+                                       ('ieee',
+                                        'network id'
+                                        'endpoint id',
+                                        'endpoint profile id',
+                                        'endpoint device type',
+                                        'Point Name',
+                                        'cluster id',
+                                        'Notes'))
+        config_writer.writeheader()
 
+        results = {}
         for ep_id, endpoint in device.endpoints.items():
-            #ep 0 = zdo
+            # ep 0 = zdo
             if ep_id == 0:
                 continue
-            #not sure if this will take up all the device memory
+            # not sure if this will take up all the device memory
             for cluster in endpoint.in_clusters.values():
                 cluster.add_context_listener(self)
-
+                for command in cluster.commands:
+                    results = {
+                        'ieee': device.ieee,
+                        'network id': device.nwk,
+                        'endpoint id': ep_id,
+                        'endpoint profile id': endpoint.profile_id,
+                        'endpoint device type': endpoint.device_type,
+                        'command': command,
+                        'attribute': "none",
+                        'Point Name': cluster.name + device.nwk,
+                        'cluster id': cluster.cluster_id,
+                        'is_command': "True",
+                        'value': 0,
+                        'Notes': "",
+                    }
+                    config_writer.writerow(results)
+                for attribute in cluster.attributes:
+                    print(attribute)
 
     def attribute_updated(self, cluster, attribute, value):
         device = cluster.endpoint.device
         endpoint = cluster.endpoint
         try:
-            print(f"attribute update {cluster.attributes[attribute][0]} {value/100.0} {cluster.name}")
+            print(f"attribute update {cluster.attributes[attribute][0]} {value / 100.0} {cluster.name}")
         except Exception:
             print(f"attr not supported by zcl {cluster} {attribute} {value}")
 
 
 async def main():
-    if args.radio_manufacturer == "ezsp":
-        radio = bellows.zigbee.application.ControllerApplication
-    elif args.radio_manufacturer == "deconz":
-        radio = zigpy_deconz.zigbee.application.ControllerApplication
-    elif args.radio_manufacturer == "zigate":
-        radio = zigpy_zigate.zigbee.application.ControllerApplication
-
     controller = await ControllerApplication.new(
         config=ControllerApplication.SCHEMA({
             "database_path": "/home/bl33m/.config/bellows/app.db",
@@ -158,25 +178,20 @@ async def main():
         auto_form=True,
         start_radio=True,
     )
-    
-     
 
     listener = MainListener(controller)
     controller.add_listener(listener)
 
     for dev in controller.devices.values():
         listener.device_initialized(dev, new=False)
-        
-    
 
     print("allow joins for 2 minutes")
     await controller.permit(120)
     await asyncio.sleep(120)
-    
-    
 
     await asyncio.get_running_loop().create_future()
-    
+
+
 #    config_writer = DictWriter(args.radio_manufacture + ".csv",
 #                               ('ieee',
 #                                'network id'
@@ -188,9 +203,6 @@ async def main():
 #                                'Notes'))
 #    config_writer.writeheader()
 
-#    for device in controller.devices.values():
-#       listener.device_initialized(device, new=False)
-#
 #    for ieee, dev in controller.devices.items():
 #        for epid, ep in controller.devices.items():
 #            for cluster_id, cluster in ep.in_clusters + ep.out_clusters:
@@ -211,4 +223,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-

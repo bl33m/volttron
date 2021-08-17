@@ -82,14 +82,16 @@ class Interface(BasicRevert, BaseInterface):
     """
     Interface implementation for use with the zigpy library
     """
-    zha_gateway = ""
 
     #incorporate config file in order to look up manufacture
     def __init__(self, **kwargs):
         super(Interface, self).__init__(**kwargs)
+        self.device_ieee = ""
+
         
     def configure(self, config_dict, registry_config_str):
         self.parse_config(registry_config_str)
+        self.device_ieee = config_dict.get("device_ieee")
 
     def get_point(self, point_name):
         register = self.get_register_by_name(point_name)
@@ -98,18 +100,19 @@ class Interface(BasicRevert, BaseInterface):
         if register.listener:
             result = self.vip.rpc.call(register.ieee, 'read_val', register.ep_id,
                     register.cluster_id, register.attribute_id).get(timeout=self.timeout)
-        elif:
+        else:
             result = self.vip.rpc.call(register.ieee, 'poll_val', register.ep_id,
                     register.cluster_id, register.attribute_id).get(timeout=self.timeout)
         return result
 
     def set_point(self, point_name, value):
         register = self.get_register_by_name(point_name)
-        if register.is_command
-            result = self.vip.rpc.call(register.ieee, 'issue_command', register.ep_id.
-                    register.cluster_id, register.attribute_id.get(timeout=self.timeout)
-        #still missing sequence number and the endpoint object, try finding these in the endpoint class
-        return device.request(cluster_id, endpoint_id, command, manufacturer)
+        if register.is_command == False:
+            raise IOError("Trying to write a read only point")
+
+        result = self.vip.rpc.call(register.ieee, 'issue_command', register.ep_id.
+                    register.cluster_id, register.attribute_id, value).get(timeout=self.timeout)
+        return result
 
     def scrape_all(self):
         result = self.vip.rpc.call('scrape_all').get(timeout=self.timeout)
