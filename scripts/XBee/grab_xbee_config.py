@@ -167,7 +167,7 @@ class MainListener():
                         'endpoint_id': ep_id,
                         'endpoint_profile_id': endpoint.profile_id,
                         'endpoint_device_type': endpoint.device_type,
-                        'command': command,
+                        'command': "none",
                         'attribute': cluster.attributes[attribute_id][0],
                         'attribute_id': attribute_id,
                         'Point_Name': str(cluster.name) + str(cluster.attributes[attribute_id][0]) + str(device.nwk),
