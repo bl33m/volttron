@@ -138,7 +138,6 @@ class Zigbeehubproxy(Agent):
 
     # make sure index of the network value db is the ieees
     def create_device_database(self):
-        for
         return "use registry configs to create network database of values"
 
 def main(argv=sys.argv):

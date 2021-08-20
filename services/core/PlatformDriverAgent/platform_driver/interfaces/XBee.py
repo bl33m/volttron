@@ -59,23 +59,24 @@ from platform_driver.interfaces import BaseInterface, BaseRegister, BasicRevert
 
 
 class XRegister(BaseRegister):
-    def __init__(self, point_name, ep_id, ieee, network_id, cluster_id, endpoint_device_type, cacheValue = None,
-                 description=' '):
-        self.point_name = point_name
-        self.ep_id = ep_id
+    def __init__(self, ieee, network_id, endpoint_id, endpoint_profile_id, endpoint_device_type,
+                 command, attribute, attribute_id, Point_Name, cluster_id, value):
+        self.point_name = Point_Name
+        self.endpoint_id = endpoint_id
         self.ieee = ieee
+        self.endpoint_profile_id = endpoint_profile_id
         self.cluster_id = cluster_id
-        self.description = description
+        self.command = command
+        self.attribute = attribute
+        self.attribute_id = attribute_id
         self.network_id = network_id
-        self.cacheValue = None
+        self.value = value
         self.endpoint_device_type = endpoint_device_type
 
     def get_device_by_ieee(self, ieee_to_find):
         for ieee, dev in self.controller.devices.items():
             if self.ieee == ieee_to_find:
                 return dev
-
-    def get_register(self):
 
 
 class Interface(BasicRevert, BaseInterface):
@@ -128,22 +129,31 @@ class Interface(BasicRevert, BaseInterface):
                 continue
             
             ieee = regDef.get('ieee')
-            network = regDef.get('network id')
+            network_id = regDef.get('network_id')
+            endpoint_id = regDef.get('endpoint_id')
+            endpoint_profile_id = ('endpoint_profile_id')
+            endpoint_device_type = ('endpoint_device_type')
+            command = regDef.get('command')
+            attribute = regDef.get('attribute')
+            attribute_id = regDef.get('attribute_id')
             point_name = regDef.get('cluster.name')
-            ep_id = regDef.get('endpoint_id')
             cluster_id = regDef.get('cluster_id')
-            attribute_id = regDef.get('endpoint device type')
-            endpoint_profile_id = regDef.get('endpoint profile id')
             is_command = regDef.get('is_command')
+            value = regDef.get('value')
 
 
-            register = XRegister(point_name,
-                    ieee,
-                    ep_id,
-                    cluster_id,
+            register = XRegister(ieee,
+                    network_id,
                     endpoint_id,
-                    attribute_id,
+                    endpoint_profile_id,
+                    endpoint_device_type,
                     command,
-                    poll_only)
+                    attribute,
+                    attribute_id,
+                    point_name,
+                    cluster_id,
+                    is_command,
+                    value,
+                    )
             self.insert_register(register)
 
